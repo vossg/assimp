@@ -272,6 +272,80 @@ void X3DImporter::endReadTransform() {
     ParseHelper_Node_Exit(); // go up in scene graph
 }
 
+
+
+// <MatrixTransform
+// DEF=""                     ID
+// USE=""                     IDREF
+// bboxCenter="0 0 0"         SFVec3f    [initializeOnly]
+// bboxSize="-1 -1 -1"        SFVec3f    [initializeOnly]
+// matrix="identity" 		  SFMatrix4f
+// invert="FALSE"			  SFBool
+// >
+//    <!-- ChildContentModel -->
+// ChildContentModel is the child-node content model corresponding to X3DChildNode, combining all profiles. ChildContentModel can contain most nodes,
+// other Grouping nodes, Prototype declarations and ProtoInstances in any order and any combination. When the assigned profile is less than Full, the
+// precise palette of legal nodes that are available depends on assigned profile and components.
+// A ProtoInstance node (with the proper node type) can be substituted for any node in this content model.
+// </Transform>
+// The MatrixTransform node is a grouping node that defines a coordinate system for its children that is relative to the coordinate systems of its ancestors.
+//   P' = M * P
+void X3DImporter::startReadMatrixTransform(XmlNode &node) {
+	aiMatrix4x4 matrix;
+	bool invert = false;
+    std::string use, def;
+
+    MACRO_ATTRREAD_CHECKUSEDEF_RET(node, def, use);
+    XmlParser::getBoolAttribute(node, "invert", invert);
+
+    std::vector<float> mvec;
+    if (X3DXmlHelper::getFloatArrayAttribute(node, "matrix", mvec)) {
+        if (mvec.size() != 16) throw DeadlyImportError("<MatrixTransform>: matrix vector must have 16 elements.");
+
+		matrix = aiMatrix4x4(mvec[0], mvec[4], mvec[8], mvec[12], mvec[1], mvec[5], mvec[9], mvec[13], mvec[2], mvec[6], mvec[10], mvec[14], mvec[3], mvec[7], mvec[11], mvec[15]);
+        mvec.clear();
+    }
+
+    // if "USE" defined then find already defined element.
+    if (!use.empty()) {
+        X3DNodeElementBase *ne(nullptr);
+        bool newgroup = (nullptr == mNodeElementCur);
+        if(newgroup)
+            ParseHelper_Group_Begin();
+        ne = MACRO_USE_CHECKANDAPPLY(node, def, use, ENET_Group, ne);
+        if (newgroup && isNodeEmpty(node)) {
+            ParseHelper_Node_Exit();
+        }
+    } else {
+        ParseHelper_Group_Begin(); // create new grouping element and go deeper if node has children.
+        // at this place new group mode created and made current, so we can name it.
+        if (!def.empty()) {
+            mNodeElementCur->ID = def;
+        }
+
+        //
+        // also set values specific to this type of group
+        //
+		if (invert)
+		{
+			matrix = matrix.Inverse();
+		}
+
+        // and assign it
+        ((X3DNodeElementGroup *)mNodeElementCur)->Transformation = matrix;
+        // in grouping set of nodes check X3DMetadataObject is not needed, because it is done in <Scene> parser function.
+
+        // for empty element exit from node in that place
+        if (isNodeEmpty(node)) {
+            ParseHelper_Node_Exit();
+        }
+    } // if(!use.empty()) else
+}
+
+void X3DImporter::endReadMatrixTransform() {
+    ParseHelper_Node_Exit(); // go up in scene graph
+}
+
 } // namespace Assimp
 
 #endif // !ASSIMP_BUILD_NO_X3D_IMPORTER

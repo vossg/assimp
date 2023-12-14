@@ -359,6 +359,10 @@ void X3DImporter::readChildNodes(XmlNode &node, const std::string &pParentNodeNa
             startReadTransform(currentNode);
             readChildNodes(currentNode, "Transform");
             endReadTransform();
+        } else if (currentName == "MatrixTransform") {
+            startReadMatrixTransform(currentNode);
+            readChildNodes(currentNode, "MatrixTransform");
+            endReadMatrixTransform();
         } else if (currentName == "Switch") {
             startReadSwitch(currentNode);
             readChildNodes(currentNode, "Switch");

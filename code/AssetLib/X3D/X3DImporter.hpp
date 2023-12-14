@@ -217,7 +217,7 @@ inline void LogInfo(const std::string &message) {
 ///		Geometry3D component:
 ///			"Box", "Cone", "Cylinder", "ElevationGrid", "Extrusion", "IndexedFaceSet", "Sphere"
 ///		Grouping component:
-///			"Group", "StaticGroup", "Switch", "Transform"
+///			"Group", "StaticGroup", "Switch", "Transform", "MatrixTransform"
 ///		Lighting component:
 ///			"DirectionalLight", "PointLight", "SpotLight"
 ///		Networking component:
@@ -326,6 +326,8 @@ private:
     void endReadSwitch();
     void startReadTransform(XmlNode &node);
     void endReadTransform();
+    void startReadMatrixTransform(XmlNode &node);
+    void endReadMatrixTransform();
 
     // light
     void readDirectionalLight(XmlNode &node);
